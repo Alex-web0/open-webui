@@ -422,7 +422,7 @@
 			keywords: [
 				'about app',
 				'about me',
-				'about open webui',
+				'about UOM AI',
 				'about page',
 				'about us',
 				'aboutapp',

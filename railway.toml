@@ -1,0 +1,7 @@
+[[mounts]]
+source = "openwebui_data"
+destination = "/app/backend/data"
+
+[[mounts]]
+source = "ollama_data"
+destination = "/root/.ollama"
