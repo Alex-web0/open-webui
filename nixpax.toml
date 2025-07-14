@@ -1,0 +1,15 @@
+[[containers]]
+name = "ollama"
+
+  [[containers.volumes]]
+  source = "ollama"
+  destination = "/root/.ollama"
+  persistent = true
+
+[[containers]]
+name = "open-webui"
+
+  [[containers.volumes]]
+  source = "open-webui"
+  destination = "/app/backend/data"
+  persistent = true
