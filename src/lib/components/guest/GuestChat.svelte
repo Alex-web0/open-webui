@@ -1,7 +1,6 @@
 <script lang="ts">
     import { onMount, tick, getContext } from 'svelte';
-    import { chatCompletion } from '$lib/apis/openai';
-    import { WEBUI_BASE_URL } from '$lib/constants';
+    import { simpleCompletion } from '$lib/apis/simple';
     import { goto } from '$app/navigation';
     import { page } from '$app/stores';
     import { user } from '$lib/stores';
@@ -9,7 +8,9 @@
 
     const i18n: Writable<any> = getContext('i18n');
 
+    const MAX_MESSAGES = 10;
     let messages: { role: string; content: string }[] = [];
+    let userMessageCount = 0;
     let message = '';
     let loading = false;
     let selectedModel = 'UOM-AI';
@@ -24,25 +25,20 @@
     };
 
     const sendMessage = async () => {
-        if (!message) return;
+        if (!message || userMessageCount >= MAX_MESSAGES) return;
         messages.push({ role: 'user', content: message });
+        userMessageCount += 1;
         message = '';
         loading = true;
         await scrollToBottom();
 
-        const [res] = await chatCompletion('', {
-            model: selectedModel,
-            stream: false,
-            messages
-        }, `${WEBUI_BASE_URL}/api`);
-
-        if (res && res.ok) {
-            const data = await res.json();
-            const content = data.choices?.[0]?.message?.content ?? '';
+        try {
+            const content = await simpleCompletion(messages, selectedModel);
             messages.push({ role: 'assistant', content });
-        } else {
+        } catch (e) {
             messages.push({ role: 'assistant', content: $i18n.t('Error') });
         }
+
         loading = false;
         await scrollToBottom();
     };
@@ -82,8 +78,17 @@
     </div>
     <div class="w-full max-w-xl mx-auto px-4 py-4">
         <textarea class="w-full border border-gray-300 dark:border-gray-700 rounded-lg p-2 mb-2 resize-none bg-transparent" rows="3" bind:value={message} />
-        <button class="px-4 py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black w-full disabled:opacity-50" on:click={sendMessage} disabled={loading || message === ''}>
+        <button
+            class="px-4 py-2 rounded-lg bg-black text-white dark:bg-white dark:text-black w-full disabled:opacity-50"
+            on:click={sendMessage}
+            disabled={loading || message === '' || userMessageCount >= MAX_MESSAGES}
+        >
             {loading ? $i18n.t('Loading...') : $i18n.t('Send')}
         </button>
+        {#if userMessageCount >= MAX_MESSAGES}
+            <div class="text-center text-xs text-gray-500 mt-1">
+                {$i18n.t('Rate limit reached. Please login for more messages.')}
+            </div>
+        {/if}
     </div>
 </div>
